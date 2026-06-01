@@ -65,6 +65,23 @@ function ExpenseForm({ categories, paymentMethods }) {
   setRecentExpenses(data || [])
 }
 
+async function handleDelete(id) {
+  const confirm = window.confirm('delete this entry?')
+  if (!confirm) return
+
+  const { error } = await supabase
+    .from('personal_expenses')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error(error)
+    alert('something went wrong')
+  } else {
+    fetchRecent()
+  }
+}
+
   return (
     <div style={{ padding: '16px', maxWidth: '400px' }}>
       <h2>add expense</h2>
@@ -145,19 +162,32 @@ function ExpenseForm({ categories, paymentMethods }) {
           <div style={{ marginTop: '24px' }}>
       <h3>recent entries</h3>
       {recentExpenses.map(exp => (
-        <div key={exp.id} style={{ 
-          padding: '10px', 
-          borderBottom: '1px solid #eee',
-          fontSize: '14px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>{exp.description}</span>
+      <div key={exp.id} style={{ 
+        padding: '10px', 
+        borderBottom: '1px solid #eee',
+        fontSize: '14px'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{exp.description}</span>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <span style={{ fontWeight: '500' }}>RM {parseFloat(exp.amount).toFixed(2)}</span>
-          </div>
-          <div style={{ color: '#888', fontSize: '12px', marginTop: '2px' }}>
-            {exp.date} {exp.note && `· ${exp.note}`} {exp.score && `· ${'★'.repeat(exp.score)}`}
+            <button 
+              onClick={() => handleDelete(exp.id)}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: '#ff4444', 
+                cursor: 'pointer',
+                fontSize: '16px',
+                padding: '0 4px'
+              }}
+            >×</button>
           </div>
         </div>
+        <div style={{ color: '#888', fontSize: '12px', marginTop: '2px' }}>
+          {exp.date} {exp.note && `· ${exp.note}`} {exp.score && `· ${'★'.repeat(exp.score)}`}
+        </div>
+      </div>
       ))}
     </div>
     </div>
