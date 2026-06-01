@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 
 function ExpenseForm({ categories, paymentMethods }) {
@@ -9,12 +9,17 @@ function ExpenseForm({ categories, paymentMethods }) {
   const [note, setNote] = useState('')
   const [score, setScore] = useState(null)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [recentExpenses, setRecentExpenses] = useState([])
+
+  useEffect(() => {
+  fetchRecent()
+}, [])
 
   async function handleSubmit() {
     if (!amount || !description || !categoryId || !paymentMethodId) {
       alert('please fill in amount, description, category and payment method')
       return
-    }
+    } 
 
     const { error } = await supabase
       .from('personal_expenses')
@@ -38,8 +43,27 @@ function ExpenseForm({ categories, paymentMethods }) {
       setDescription('')
       setNote('')
       setScore(null)
+      fetchRecent()
     }
   }
+
+  async function fetchRecent() {
+  const { data } = await supabase
+    .from('personal_expenses')
+    .select(`
+      id,
+      date,
+      description,
+      amount,
+      category_id,
+      note,
+      score
+    `)
+    .order('date', { ascending: false })
+    .limit(5)
+
+  setRecentExpenses(data || [])
+}
 
   return (
     <div style={{ padding: '16px', maxWidth: '400px' }}>
@@ -118,6 +142,24 @@ function ExpenseForm({ categories, paymentMethods }) {
         />
         </div>
       <button onClick={handleSubmit}>save expense</button>
+          <div style={{ marginTop: '24px' }}>
+      <h3>recent entries</h3>
+      {recentExpenses.map(exp => (
+        <div key={exp.id} style={{ 
+          padding: '10px', 
+          borderBottom: '1px solid #eee',
+          fontSize: '14px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>{exp.description}</span>
+            <span style={{ fontWeight: '500' }}>RM {parseFloat(exp.amount).toFixed(2)}</span>
+          </div>
+          <div style={{ color: '#888', fontSize: '12px', marginTop: '2px' }}>
+            {exp.date} {exp.note && `· ${exp.note}`} {exp.score && `· ${'★'.repeat(exp.score)}`}
+          </div>
+        </div>
+      ))}
+    </div>
     </div>
   )
 }
