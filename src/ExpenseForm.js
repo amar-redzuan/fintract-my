@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { supabase } from './supabase'
 
 const CATEGORIES = [
   { id: 'C01', label: 'Food', icon: '🍜' },
@@ -30,7 +29,6 @@ function ExpenseForm() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [recentExpenses, setRecentExpenses] = useState([])
   const [saving, setSaving] = useState(false)
-  const [showDatePicker, setShowDatePicker] = useState(false)
 
   useEffect(() => { fetchRecent() }, [])
 
@@ -90,7 +88,6 @@ function ExpenseForm() {
     return d.toISOString().split('T')[0]
   }
 
-  const catLabel = CATEGORIES.find(c => c.id === categoryId)?.label || ''
 
   return (
     <div className="max-w-sm mx-auto min-h-screen bg-white">
