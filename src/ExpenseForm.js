@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { supabase } from './supabase'
 
 const CATEGORIES = [
   { id: 'C01', label: 'Food', icon: '🍜' },
