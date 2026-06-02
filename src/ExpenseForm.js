@@ -179,16 +179,16 @@ function ExpenseForm() {
         {/* date */}
         <div>
           <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Date</label>
-          <div className="flex gap-2 mt-1">
+          <div className="flex gap-2 mt-1 mb-2">
             {[
               { label: 'Today', value: getTodayStr() },
               { label: 'Yesterday', value: getYesterdayStr() },
             ].map(opt => (
               <button
                 key={opt.label}
-                onClick={() => { setDate(opt.value); setShowDatePicker(false) }}
+                onClick={() => setDate(opt.value)}
                 className={`px-4 py-2 rounded-full border text-sm transition-all ${
-                  date === opt.value && !showDatePicker
+                  date === opt.value
                     ? 'border-gray-400 bg-white text-gray-900 font-medium'
                     : 'border-gray-200 bg-gray-50 text-gray-400'
                 }`}
@@ -196,25 +196,13 @@ function ExpenseForm() {
                 {opt.label}
               </button>
             ))}
-            <button
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className={`px-4 py-2 rounded-full border text-sm transition-all ${
-                showDatePicker
-                  ? 'border-gray-400 bg-white text-gray-900 font-medium'
-                  : 'border-gray-200 bg-gray-50 text-gray-400'
-              }`}
-            >
-              Pick date
-            </button>
           </div>
-          {showDatePicker && (
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="mt-2 w-full px-4 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-emerald-400"
-            />
-          )}
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full px-4 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-emerald-400"
+          />
         </div>
 
         {/* note */}
