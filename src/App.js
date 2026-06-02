@@ -7,25 +7,11 @@ const PASSWORD = process.env.REACT_APP_PASSWORD
 function App() {
   const [authed, setAuthed] = useState(false)
   const [input, setInput] = useState('')
-  const [categories, setCategories] = useState([])
-  const [paymentMethods, setPaymentMethods] = useState([])
 
   useEffect(() => {
-    // check if already logged in this session
     const saved = sessionStorage.getItem('fintrack-auth')
     if (saved === 'true') setAuthed(true)
   }, [])
-
-  useEffect(() => {
-    if (!authed) return
-    async function fetchData() {
-      const { data: cats } = await supabase.from('categories').select('*')
-      const { data: pms } = await supabase.from('payment_methods').select('*')
-      setCategories(cats || [])
-      setPaymentMethods(pms || [])
-    }
-    fetchData()
-  }, [authed])
 
   function handleLogin() {
     if (input === PASSWORD) {
@@ -39,36 +25,27 @@ function App() {
 
   if (!authed) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        height: '100vh',
-        gap: '12px'
-      }}>
-        <h2>fintrack-my</h2>
+      <div className="flex flex-col items-center justify-center h-screen gap-3">
+        <h2 className="text-xl font-medium">fintrack-my</h2>
         <input
           type="password"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
           placeholder="password"
-          style={{ padding: '8px 12px', fontSize: '16px' }}
+          className="px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-emerald-400"
         />
-        <button onClick={handleLogin}>enter</button>
+        <button
+          onClick={handleLogin}
+          className="px-6 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium"
+        >
+          Enter
+        </button>
       </div>
     )
   }
 
-  return (
-    <div>
-      <ExpenseForm 
-        categories={categories} 
-        paymentMethods={paymentMethods} 
-      />
-    </div>
-  )
+  return <ExpenseForm />
 }
 
 export default App
