@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { supabase } from './supabase'
 import ExpenseForm from './ExpenseForm'
 
 const PASSWORD = process.env.REACT_APP_PASSWORD
