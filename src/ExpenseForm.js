@@ -30,8 +30,20 @@ function ExpenseForm() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [recentExpenses, setRecentExpenses] = useState([])
   const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState(null)
+  const [todayTotal, setTodayTotal] = useState(0)
+  const [weekTotal, setWeekTotal] = useState(0)
+  const [monthTotal, setMonthTotal] = useState(0)
 
-  useEffect(() => { fetchRecent() }, [])
+  useEffect(() => {
+  fetchRecent()
+  fetchTotals()
+}, [])
+
+  function showToast(message) {
+  setToast(message)
+  setTimeout(() => setToast(null), 3000)
+}
 
   async function fetchRecent() {
     const { data } = await supabase
@@ -40,6 +52,39 @@ function ExpenseForm() {
       .order('date', { ascending: false })
       .limit(5)
     setRecentExpenses(data || [])
+  }
+
+  async function fetchTotals() {
+  const today = new Date().toISOString().split('T')[0]
+  
+  const startOfWeek = new Date()
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
+  const weekStr = startOfWeek.toISOString().split('T')[0]
+  
+  const startOfMonth = new Date()
+  startOfMonth.setDate(1)
+  const monthStr = startOfMonth.toISOString().split('T')[0]
+
+  const { data: todayData } = await supabase
+    .from('personal_expenses')
+    .select('amount')
+    .eq('date', today)
+
+  const { data: weekData } = await supabase
+    .from('personal_expenses')
+    .select('amount')
+    .gte('date', weekStr)
+
+  const { data: monthData } = await supabase
+    .from('personal_expenses')
+    .select('amount')
+    .gte('date', monthStr)
+
+  const sum = arr => arr?.reduce((a, b) => a + parseFloat(b.amount), 0) || 0
+
+    setTodayTotal(sum(todayData))
+    setWeekTotal(sum(weekData))
+    setMonthTotal(sum(monthData))
   }
 
   async function handleSubmit() {
@@ -65,11 +110,13 @@ function ExpenseForm() {
       console.error(error)
       alert('something went wrong')
     } else {
+      showToast('expense saved! ✓')
       setAmount('')
       setDescription('')
       setNote('')
       setScore(null)
       fetchRecent()
+      fetchTotals()
     }
   }
 
@@ -93,6 +140,13 @@ function ExpenseForm() {
   return (
     <div className="max-w-sm mx-auto min-h-screen bg-white">
 
+      {/* toast */}
+      {toast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg z-50 transition-all">
+          ✓ {toast}
+        </div>
+      )}
+
       {/* header */}
       <div className="flex justify-between items-center px-4 py-4 border-b border-gray-100">
         <div>
@@ -102,6 +156,22 @@ function ExpenseForm() {
         <span className="text-xs px-3 py-1 rounded-full bg-emerald-50 text-emerald-700">
           {new Date().toLocaleDateString('en-MY', { month: 'short', year: 'numeric' })}
         </span>
+      </div>
+
+      {/* spending summary */}
+      <div className="grid grid-cols-3 gap-2 px-4 py-3 border-b border-gray-100">
+        {[
+          { label: 'Today', value: todayTotal },
+          { label: 'This Week', value: weekTotal },
+          { label: 'This Month', value: monthTotal },
+        ].map(item => (
+          <div key={item.label} className="bg-gray-50 rounded-xl p-3">
+            <p className="text-xs text-gray-400 mb-1">{item.label}</p>
+            <p className="text-sm font-medium text-gray-900">
+              RM {item.value.toFixed(2)}
+            </p>
+          </div>
+        ))}
       </div>
 
       <div className="px-4 pt-4 space-y-4">
@@ -229,7 +299,6 @@ function ExpenseForm() {
               </button>
             ))}
           </div>
-        </div>
 
         {/* save button */}
         <button
@@ -239,6 +308,7 @@ function ExpenseForm() {
         >
           {saving ? 'Saving...' : 'Save expense'}
         </button>
+      </div>
       </div>
 
       {/* recent entries */}
