@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
+import Dashboard from './Dashboard'
 import ExpenseForm from './ExpenseForm'
+import FamilyExpenseForm from './FamilyExpenseForm'
 
 const PASSWORD = process.env.REACT_APP_PASSWORD
 
 function App() {
   const [authed, setAuthed] = useState(false)
   const [input, setInput] = useState('')
+  const [activeTab, setActiveTab] = useState('personal')
 
   useEffect(() => {
     const saved = sessionStorage.getItem('fintrack-auth')
@@ -24,6 +27,7 @@ function App() {
 
   if (!authed) {
     return (
+      
       <div className="flex flex-col items-center justify-center h-screen gap-3">
         <h2 className="text-xl font-medium">fintrack-my</h2>
         <input
@@ -44,7 +48,26 @@ function App() {
     )
   }
 
-  return <ExpenseForm />
+return (
+  <div>
+    <Dashboard />
+    <div className="max-w-sm mx-auto px-4 flex gap-2 mb-2">
+      <button
+        onClick={() => setActiveTab('personal')}
+        className={`flex-1 py-2 rounded-xl text-sm font-medium ${activeTab === 'personal' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-500'}`}
+      >
+        My expenses
+      </button>
+      <button
+        onClick={() => setActiveTab('family')}
+        className={`flex-1 py-2 rounded-xl text-sm font-medium ${activeTab === 'family' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}
+      >
+        Family
+      </button>
+    </div>
+    {activeTab === 'personal' ? <ExpenseForm /> : <FamilyExpenseForm />}
+  </div>
+)
 }
 
 export default App

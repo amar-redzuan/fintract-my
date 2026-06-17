@@ -10,39 +10,40 @@ const CATEGORIES = [
   { id: 'C06', label: 'Debt', icon: '🏦' },
 ]
 
-const PAYMENTS = [
-  { id: 'PM01', label: 'QR Maybank' },
-  { id: 'PM02', label: 'TNG eWallet' },
-  { id: 'PM03', label: 'Debit Card' },
-  { id: 'PM04', label: 'Family CC' },
-  { id: 'PM05', label: 'Bank Transfer' },
+const PAID_BY = [
+  { id: 'dad', label: 'Dad' },
+  { id: 'mum', label: 'Mum' },
 ]
 
-function ExpenseForm() {
+const PAID_WITH = [
+  { id: 'maybank_cc', label: 'Maybank CC' },
+  { id: 'qr_maybank', label: 'QR Maybank' },
+  { id: 'maybank_debit', label: 'Maybank Debit' },
+]
+
+function FamilyExpenseForm() {
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
-  const [categoryId, setCategoryId] = useState('C01')
-  const [paymentMethodId, setPaymentMethodId] = useState('PM01')
+  const [categoryId, setCategoryId] = useState('C07')
   const [note, setNote] = useState('')
-  const [score, setScore] = useState(null)
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [recentExpenses, setRecentExpenses] = useState([])
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
+  const [paidBy, setPaidBy] = useState('mum')
+  const [paidWith, setPaidWith] = useState('maybank_cc')
 
-  useEffect(() => {
-  fetchRecent()
-}, [])
+  useEffect(() => { fetchRecent() }, [])
 
   function showToast(message) {
-  setToast(message)
-  setTimeout(() => setToast(null), 3000)
-}
+    setToast(message)
+    setTimeout(() => setToast(null), 3000)
+  }
 
   async function fetchRecent() {
     const { data } = await supabase
-      .from('personal_expenses')
-      .select('id, date, description, amount, category_id, note, score')
+      .from('family_expenses')
+      .select('id, date, description, amount, category_id, card_used, note')
       .order('date', { ascending: false })
       .limit(5)
     setRecentExpenses(data || [])
@@ -55,37 +56,32 @@ function ExpenseForm() {
     }
     setSaving(true)
     const { error } = await supabase
-      .from('personal_expenses')
+      .from('family_expenses')
       .insert({
         date,
         category_id: categoryId,
         description,
         amount: parseFloat(amount),
-        payment_method_id: paymentMethodId,
-        bank_account_id: 'BA01',
-        note: note || null,
-        score: score || null
+        paid_by: paidBy,
+        paid_with: paidWith,
+        note: note || null
       })
     setSaving(false)
     if (error) {
       console.error(error)
       alert('something went wrong')
     } else {
-      showToast('expense saved! ✓')
+      showToast('saved! ✓')
       setAmount('')
       setDescription('')
       setNote('')
-      setScore(null)
       fetchRecent()
     }
   }
 
   async function handleDelete(id) {
     if (!window.confirm('delete this entry?')) return
-    const { error } = await supabase
-      .from('personal_expenses')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('family_expenses').delete().eq('id', id)
     if (!error) fetchRecent()
   }
 
@@ -96,20 +92,15 @@ function ExpenseForm() {
     return d.toISOString().split('T')[0]
   }
 
-
   return (
-    <div className="max-w-sm mx-auto min-h-screen bg-white">
-
-      {/* toast */}
+    <div className="max-w-sm mx-auto bg-white">
       {toast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg z-50 transition-all">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full text-sm font-medium shadow-lg z-50">
           ✓ {toast}
         </div>
       )}
 
-      <div className="px-4 pt-4 space-y-4">
-
-        {/* amount */}
+      <div className="px-4 pt-2 space-y-4">
         <div>
           <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Amount</label>
           <div className="relative mt-1">
@@ -119,24 +110,22 @@ function ExpenseForm() {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full pl-12 pr-4 py-3 text-2xl font-medium bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-400"
+              className="w-full pl-12 pr-4 py-3 text-2xl font-medium bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400"
             />
           </div>
         </div>
 
-        {/* description */}
         <div>
           <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Description</label>
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="makan / tol / parking / groceries"
-            className="w-full mt-1 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-400 text-sm"
+            placeholder="groceries / petrol / dinner"
+            className="w-full mt-1 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 text-sm"
           />
         </div>
 
-        {/* category */}
         <div>
           <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Category</label>
           <div className="grid grid-cols-2 gap-2 mt-1">
@@ -146,7 +135,7 @@ function ExpenseForm() {
                 onClick={() => setCategoryId(cat.id)}
                 className={`flex items-center gap-2 px-3 py-3 rounded-xl border text-sm font-medium transition-all ${
                   categoryId === cat.id
-                    ? 'border-emerald-400 bg-emerald-50 text-emerald-700'
+                    ? 'border-blue-400 bg-blue-50 text-blue-700'
                     : 'border-gray-200 bg-gray-50 text-gray-500'
                 }`}
               >
@@ -157,16 +146,34 @@ function ExpenseForm() {
           </div>
         </div>
 
-        {/* payment method */}
+        <div>
+          <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Paid by</label>
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            {PAID_BY.map(p => (
+              <button
+                key={p.id}
+                onClick={() => setPaidBy(p.id)}
+                className={`px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
+                  paidBy === p.id
+                    ? 'border-blue-400 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-gray-50 text-gray-500'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div>
           <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Paid with</label>
           <div className="grid grid-cols-2 gap-2 mt-1">
-            {PAYMENTS.map(pm => (
+            {PAID_WITH.map(pm => (
               <button
                 key={pm.id}
-                onClick={() => setPaymentMethodId(pm.id)}
+                onClick={() => setPaidWith(pm.id)}
                 className={`px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
-                  paymentMethodId === pm.id
+                  paidWith === pm.id
                     ? 'border-blue-400 bg-blue-50 text-blue-700'
                     : 'border-gray-200 bg-gray-50 text-gray-500'
                 }`}
@@ -177,7 +184,6 @@ function ExpenseForm() {
           </div>
         </div>
 
-        {/* date */}
         <div>
           <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Date</label>
           <div className="flex gap-2 mt-1 mb-2">
@@ -202,49 +208,30 @@ function ExpenseForm() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full px-4 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-emerald-400"
+            className="w-full px-4 py-2 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-400"
           />
         </div>
 
-        {/* note */}
         <div>
           <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Note (optional)</label>
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="sedap tak?"
-            className="w-full mt-1 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-emerald-400 text-sm"
+            placeholder="anything to remember"
+            className="w-full mt-1 px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none focus:border-blue-400 text-sm"
           />
         </div>
 
-        {/* score */}
-        <div>
-          <label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Score</label>
-          <div className="flex gap-2 mt-1">
-            {[1,2,3,4,5].map(n => (
-              <button
-                key={n}
-                onClick={() => setScore(score === n ? null : n)}
-                className={`text-2xl transition-all ${score >= n ? 'opacity-100' : 'opacity-20'}`}
-              >
-                ★
-              </button>
-            ))}
-          </div>
-
-        {/* save button */}
         <button
           onClick={handleSubmit}
           disabled={saving}
-          className="w-full py-4 bg-emerald-600 text-white rounded-xl font-medium text-sm disabled:opacity-50 active:scale-95 transition-all"
+          className="w-full py-4 bg-blue-600 text-white rounded-xl font-medium text-sm disabled:opacity-50 active:scale-95 transition-all"
         >
-          {saving ? 'Saving...' : 'Save expense'}
+          {saving ? 'Saving...' : 'Save family expense'}
         </button>
       </div>
-      </div>
 
-      {/* recent entries */}
       <div className="mt-4 border-t border-gray-100">
         <p className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Recent entries</p>
         {recentExpenses.map(exp => {
@@ -254,21 +241,13 @@ function ExpenseForm() {
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-medium text-gray-900">{exp.description}</span>
                 <span className="text-xs text-gray-400">
-                  {exp.date} · {cat?.icon} {cat?.label}
+                  {exp.date} · {cat?.icon} {cat?.label} · {exp.card_used}'s card
                   {exp.note && ` · ${exp.note}`}
-                  {exp.score && ` · ${'★'.repeat(exp.score)}`}
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-900">
-                  RM {parseFloat(exp.amount).toFixed(2)}
-                </span>
-                <button
-                  onClick={() => handleDelete(exp.id)}
-                  className="text-red-400 text-lg leading-none"
-                >
-                  ×
-                </button>
+                <span className="text-sm font-medium text-gray-900">RM {parseFloat(exp.amount).toFixed(2)}</span>
+                <button onClick={() => handleDelete(exp.id)} className="text-red-400 text-lg leading-none">×</button>
               </div>
             </div>
           )
@@ -278,4 +257,4 @@ function ExpenseForm() {
   )
 }
 
-export default ExpenseForm
+export default FamilyExpenseForm
